@@ -13,7 +13,11 @@ A mission-critical Workforce Management & Access Control backend designed for hi
 1. **Clustered Architecture**: Spawns HTTP worker threads based on available CPU cores to handle incoming REST API requests concurrently, backed by a master process connection manager.
 2. **Low-Level TCP Listener**: Master process hosts a native TCP socket server on port `9000` to process raw streams from physical scanners. Includes custom **line-buffer decoding** to prevent packet fragmentation.
 3. **Distributed Redis Caching**: Validates employee badges in sub-milliseconds by caching registry lookups in Redis (10s TTL), with a resilient automatic fallback to MySQL if Redis is offline.
-4. **Automated Testing Suite**: Full unit and integration coverage using **Vitest** and **Supertest** running under 5 seconds.
+4. **JWT Authentication & Token Rotation**: Full auth system supporting registration, secure login, and strict refresh token rotation (old tokens revoked immediately on usage, and stored securely hashed in the database).
+5. **Role-Based Access Control (RBAC)**: Fine-grained access control middleware to restrict route actions to specific authorization roles (`admin`, `manager`, `staff`).
+6. **Product Inventory REST API**: Complete CRUD REST API with AJV validation, pagination, keyword searching, soft deletes (paranoid mode), and total metrics headers.
+7. **Centralized Error Handling**: Standardized error management pattern using a customized `AppError` class and global error middleware to enforce uniform JSON error payloads.
+8. **Automated Testing Suite**: Full unit and integration coverage using **Vitest** and **Supertest** running under 5 seconds.
 
 ---
 
@@ -28,32 +32,44 @@ cidroy-backend-assessment/
 │   │   ├── logger.ts           # Winston logger config
 │   │   └── redis.ts            # Redis client connection manager
 │   ├── controllers/
+│   │   ├── auth.controller.ts     # User registry, login, rotation, logout
 │   │   ├── employee.controller.ts # Employee management & access toggle
-│   │   ├── health.controller.ts# Health diagnostics
-│   │   └── iot.controller.ts   # Device triggers & paginated logs API
+│   │   ├── health.controller.ts   # Health diagnostics
+│   │   ├── iot.controller.ts      # Device triggers & paginated logs API
+│   │   └── product.controller.ts  # Product CRUD operations
 │   ├── middleware/
-│   │   ├── error.middleware.ts  # Global JSON exception handler
-│   │   ├── logger.middleware.ts # Request logger
+│   │   ├── auth.middleware.ts     # JWT authentication verifier
+│   │   ├── error.middleware.ts    # Global exception handler & AppError class
+│   │   ├── logger.middleware.ts   # Request logger
+│   │   ├── rbac.middleware.ts     # Role-based access control blocks
 │   │   └── validate.middleware.ts # AJV request payload validator
 │   ├── models/                 # Sequelize MySQL models
 │   │   ├── index.ts            # Association registry
 │   │   ├── employee.model.ts   # Workforce Personnel registry
-│   │   └── access_log.model.ts # Gateway check-in logs
+│   │   ├── access_log.model.ts # Gateway check-in logs
+│   │   ├── user.model.ts       # Authenticated Users (bcrypt hash hooks)
+│   │   ├── refresh_token.model.ts # Hashed Refresh Token registry
+│   │   └── product.model.ts    # Products inventory (paranoid soft delete)
 │   ├── routes/                 # Versioned API routes
 │   │   ├── v1/
+│   │   │   ├── auth.routes.ts     # Authentication & registration routes
 │   │   │   ├── employee.routes.ts # Employee management routes
 │   │   │   ├── health.routes.ts
 │   │   │   ├── iot.routes.ts
+│   │   │   ├── product.routes.ts  # Products inventory CRUD routes
 │   │   │   └── index.ts        # V1 router aggregator
 │   │   └── index.ts            # Main router (/api/v1 prefix)
 │   ├── schemas/                # AJV validation schemas
+│   │   ├── auth.schema.ts      # Auth validation schemas
 │   │   ├── employee.schema.ts  # Employee query & body schemas
-│   │   └── iot.schema.ts
+│   │   ├── iot.schema.ts
+│   │   └── product.schema.ts   # Product CRUD schemas
 │   ├── services/               # Core business services
 │   │   ├── iot.service.ts      # Card lookups & logs logic
 │   │   └── tcp.service.ts      # Native TCP socket hardware server
 │   ├── scripts/
-│   │   └── seed.ts             # Safe database seeder (findOrCreate)
+│   │   ├── seed.ts             # Safe database seeder (findOrCreate)
+│   │   └── seed_auth.ts        # User credentials & mock products seeder
 │   ├── app.ts                  # Express server app setup
 │   └── server.ts               # Cluster master orchestrator
 ├── database/
@@ -118,6 +134,8 @@ cidroy-backend-assessment/
 - `DB_NAME`: MySQL database name.
 - `REDIS_HOST`: Redis server host (default `127.0.0.1`).
 - `REDIS_PORT`: Redis server port (default `6379`).
+- `JWT_SECRET`: Secret key for signing JWT Access Tokens.
+- `JWT_REFRESH_SECRET`: Secret key for signing Refresh Tokens.
 
 ---
 
@@ -135,6 +153,28 @@ cidroy-backend-assessment/
   - Body: `{ deviceId: string, direction: 'in' | 'out', email: string, rtspSnapshot: string }`
 - **`GET /api/v1/iot/logs`**: Get paginated access logs filtered by status or deviceType.
   - Query params: `page`, `limit`, `status`, `deviceType`
+
+### Authentication & Access Control
+- **`POST /api/v1/auth/register`**: Register a new user profile with standard passwords and roles.
+  - Body: `{ email: string, password: string, role: 'admin' | 'manager' | 'staff' }`
+- **`POST /api/v1/auth/login`**: Perform credential checks and acquire fresh access (JWT) and refresh tokens.
+  - Body: `{ email: string, password: string }`
+- **`POST /api/v1/auth/refresh`**: Rotate the active refresh token and acquire a new token pair.
+  - Body: `{ refreshToken: string }`
+- **`POST /api/v1/auth/logout`**: Terminate the session and revoke the active refresh token.
+  - Body: `{ refreshToken: string }`
+- **`GET /api/v1/auth/admin/users`**: List all user records (Allowed roles: `admin`).
+
+### Product Inventory REST API
+- **`GET /api/v1/products`**: Fetch products with pagination, search, and category filters (Allowed: all authenticated).
+  - Query params: `page`, `limit`, `search`, `category`, `isActive`
+  - Headers returned: `X-Total-Count`
+- **`GET /api/v1/products/:id`**: Fetch a single product by ID (Allowed: all authenticated).
+- **`POST /api/v1/products`**: Create a new product (Allowed roles: `admin`, `manager`).
+  - Body: `{ name: string, description: string, price: number, stock: number, category: 'electronics' | 'clothing' | 'food' | 'other' }`
+- **`PUT /api/v1/products/:id`**: Full product update (Allowed roles: `admin`, `manager`).
+- **`PATCH /api/v1/products/:id`**: Partial product update (Allowed roles: `admin`, `manager`).
+- **`DELETE /api/v1/products/:id`**: Soft-delete a product record (Allowed roles: `admin`, `manager`).
 
 ### Workforce Personnel & Access Control
 - **`GET /api/v1/employees`**: Retrieve all employees with paginated options, search (by name, email, employee code, department), and filter by access status.
@@ -156,3 +196,9 @@ cidroy-backend-assessment/
    Employee lookups cache for 10 seconds. In case the Redis container goes down under load, we implemented a try-catch query guard that falls back to MySQL dynamically, preventing any downtime.
 5. **Immediate Cache Invalidation on Access Revocation/Grant**:
    If an employee's access status changes (`PATCH /api/v1/employees/:id/access`), their cached lookup keys (`rfid_*`, `bio_*`, `face_*`) are immediately invalidated in Redis. This prevents the "authorization lag" where a deactivated card would still grant access for up to 10 seconds due to TTL caching.
+6. **Centralized Error Handling Framework**:
+   Error handling is completely centralized. Controllers never send custom inline error JSON responses; instead, they instantiate `AppError` (custom class inheriting `Error` that accepts a `statusCode` and optional validation details) and pass it down to `next(new AppError(...))`. The global error middleware captures the event, logs the error stack trace internally using the Winston logger, and sends a standardized error JSON structure.
+7. **Hashed Refresh Token Rotation**:
+   Refresh tokens are signed JWT keys. To prevent session hijacking and replay attacks, we hash refresh tokens in the database using SHA256 before validation. Invoking the refresh endpoint rotates the token by immediately revoking the old entry in the database and creating a new record.
+8. **Paranoid Soft Deletes**:
+   To preserve catalog change logs and history, the `Product` model utilizes Sequelize paranoid soft-delete settings, mapping deletions to `deleted_at` timestamps instead of executing destructive queries.

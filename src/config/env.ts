@@ -20,6 +20,8 @@ const envSchema = {
     DB_NAME: { type: 'string', default: 'cidroy_db' },
     REDIS_HOST: { type: 'string', default: '127.0.0.1' },
     REDIS_PORT: { type: 'integer', default: 6379 },
+    JWT_SECRET: { type: 'string', default: 'cidroy_jwt_secret_key_12345' },
+    JWT_REFRESH_SECRET: { type: 'string', default: 'cidroy_jwt_refresh_secret_key_67890' },
   },
   required: ['DB_USER', 'DB_NAME'],
 };
@@ -35,7 +37,7 @@ const validate = ajv.compile(envSchema);
 const valid = validate(process.env);
 
 if (!valid) {
-  console.error('❌ Invalid environment variables:');
+  console.error('Invalid environment variables:');
   console.error(JSON.stringify(validate.errors, null, 2));
   process.exit(1);
 }
@@ -51,4 +53,6 @@ export const env = {
   DB_NAME: process.env.DB_NAME as string,
   REDIS_HOST: process.env.REDIS_HOST as string,
   REDIS_PORT: process.env.REDIS_PORT as unknown as number,
+  JWT_SECRET: process.env.JWT_SECRET as string,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,
 };

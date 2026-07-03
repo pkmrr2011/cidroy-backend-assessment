@@ -9,6 +9,7 @@
     "build": "rimraf dist && tsc",
     "start": "node dist/server.js",
     "db:seed": "tsx src/scripts/seed.ts",
+    "db:seed:auth": "tsx src/scripts/seed_auth.ts",
     "test": "cross-env NODE_ENV=test vitest run",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\""

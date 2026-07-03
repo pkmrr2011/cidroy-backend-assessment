@@ -18,4 +18,4 @@ COPY public ./public
 COPY .env.example ./
 
 EXPOSE 3000
-CMD ["sh", "-c", "node dist/scripts/seed.js && node dist/server.js"]
+CMD ["sh", "-c", "node dist/scripts/seed.js && node dist/scripts/seed_auth.js && node dist/server.js"]

@@ -2,12 +2,19 @@ import { Request, Response, NextFunction } from 'express';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 
-export interface AppError extends Error {
-  statusCode?: number;
-  details?: any;
+export class AppError extends Error {
+  public statusCode: number;
+  public details?: any;
+
+  constructor(message: string, statusCode: number, details?: any) {
+    super(message);
+    this.statusCode = statusCode;
+    this.details = details;
+    Object.setPrototypeOf(this, AppError.prototype);
+  }
 }
 
-export function errorMiddleware(err: AppError, req: Request, res: Response, _next: NextFunction) {
+export function errorMiddleware(err: any, req: Request, res: Response, _next: NextFunction) {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 

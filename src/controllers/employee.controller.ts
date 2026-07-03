@@ -4,6 +4,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { redisClient } from '../config/redis.js';
 import { logger } from '../config/logger.js';
 
+import { AppError } from '../middleware/error.middleware.js';
+
 export const getEmployees = asyncHandler(async (req, res) => {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 20;
@@ -45,17 +47,13 @@ export const getEmployees = asyncHandler(async (req, res) => {
   });
 });
 
-export const updateAccess = asyncHandler(async (req, res) => {
+export const updateAccess = asyncHandler(async (req, res, next) => {
   const id = Number(req.params.id);
   const { hasAccess } = req.body;
 
   const employee = await Employee.findByPk(id);
   if (!employee) {
-    res.status(404).json({
-      status: 'error',
-      message: `Employee with ID ${id} not found`,
-    });
-    return;
+    return next(new AppError(`Employee with ID ${id} not found`, 404));
   }
 
   await employee.update({ hasAccess });
