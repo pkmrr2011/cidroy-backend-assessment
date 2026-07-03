@@ -55,7 +55,7 @@ async function seedAuth() {
     {
       name: 'iPhone 15 Pro Max',
       description: 'Titanium design, A17 Pro chip, 256GB, Blue Titanium.',
-      price: 1199.00,
+      price: 1199.0,
       stock: 45,
       category: 'electronics' as const,
       isActive: true,
@@ -63,7 +63,7 @@ async function seedAuth() {
     {
       name: 'Premium Denim Jacket',
       description: 'Vintage wash, 100% organic cotton.',
-      price: 89.50,
+      price: 89.5,
       stock: 30,
       category: 'clothing' as const,
       isActive: true,
@@ -95,7 +95,7 @@ async function seedAuth() {
     {
       name: 'Ergonomic Desk Chair',
       description: 'High-back mesh chair with lumbar support.',
-      price: 189.00,
+      price: 189.0,
       stock: 8,
       category: 'other' as const,
       isActive: true,
