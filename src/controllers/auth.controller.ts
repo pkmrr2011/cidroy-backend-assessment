@@ -143,7 +143,7 @@ export const refresh = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const logout = asyncHandler(async (req, res, next) => {
+export const logout = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
   const hashedToken = hashToken(refreshToken);
