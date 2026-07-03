@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cidroy Access Control Command Center</title>
+  <!-- Google Fonts Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-blue: #3b82f6;
+      --accent-orange: #f59e0b;
+      --glass-glow: rgba(59, 130, 246, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-color);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(17, 24, 39, 0.8) 0, transparent 50%),
+        radial-gradient(at 50% 0%, rgba(59, 130, 246, 0.1) 0, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: rgba(11, 15, 25, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.2rem;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--accent-green);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    .container {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 300px 1fr 380px;
+      gap: 2rem;
+    }
+
+    @media (max-width: 1100px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    /* Diagnostics Column */
+    .telemetry-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .telemetry-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .telemetry-label {
+      color: var(--text-sub);
+    }
+
+    .telemetry-value {
+      font-weight: 500;
+    }
+
+    /* Access Logs Feed Column */
+    .logs-column {
+      max-height: 80vh;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .logs-column::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .logs-column::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 10px;
+    }
+
+    .feed-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .log-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1.25rem;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .log-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateY(-2px);
+    }
+
+    .log-card.granted {
+      border-left: 4px solid var(--accent-green);
+    }
+
+    .log-card.denied {
+      border-left: 4px solid var(--accent-red);
+      background: rgba(239, 68, 68, 0.02);
+    }
+
+    .device-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .log-card.granted .device-icon {
+      color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .log-card.denied .device-icon {
+      color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    .employee-info h4 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .employee-info p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    .department-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .log-status-section {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge.granted {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge.denied {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--accent-red);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .log-time {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    .rtsp-thumb {
+      grid-column: 1 / -1;
+      background: #000;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-sub);
+    }
+
+    .camera-feed-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-red);
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    /* Simulator Panel */
+    .sim-buttons-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .sim-button {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .sim-button:hover {
+      background: rgba(59, 130, 246, 0.08);
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: translateX(4px);
+    }
+
+    .sim-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .sim-description {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+      background: rgba(255, 255, 255, 0.01);
+      padding: 10px;
+      border-left: 2px solid var(--accent-blue);
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* Live Output Feed console */
+    .console-card {
+      margin-top: 1rem;
+      background: #05070c;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.8rem;
+      max-height: 150px;
+      overflow-y: auto;
+      color: #38bdf8;
+    }
+
+    .console-line {
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-sub);
+      padding: 3rem 0;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-section">
+      <div class="brand-logo">C</div>
+      <h1 class="brand-title">CIDROY ACCESS LOG COMMAND CENTER</h1>
+    </div>
+    <div class="system-status">
+      <div class="status-dot"></div>
+      <span>ACCESS HUB: ONLINE</span>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- LEFT COLUMN: Telemetry -->
+    <div class="card">
+      <h3 class="card-title">
+        <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H5S3,3 3,5V19S3,21 5,21H19S21,21 21,19V5S21,3 19,3M19,19H5V5H19V19M17,17H7V15H17V17M17,13H7V11H17V13M17,9H7V7H17V9Z" /></svg>
+        System Telemetry
+      </h3>
+      <div class="telemetry-list">
+        <div class="telemetry-item">
+          <span class="telemetry-label">Gateway Engine</span>
+          <span class="telemetry-value" style="color: var(--accent-green)">Active</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Clustering Workers</span>
+          <span class="telemetry-value" id="worker-count">4 Threads</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Port Listener</span>
+          <span class="telemetry-value" style="color: var(--accent-blue)">HTTP:3000 / TCP:9000</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">MySQL DB Status</span>
+          <span class="telemetry-value" style="color: var(--accent-green)">Connected</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Rate Limiter</span>
+          <span class="telemetry-value" style="color: var(--accent-orange)">200 req / 15m</span>
+        </div>
+      </div>
+      <div class="sim-description">
+        This platform runs on Node.js clustering worker threads. Hardware devices (RFID scanners and biometric devices) trigger accesses via raw TCP on port 9000.
+      </div>
+    </div>
+
+    <!-- CENTER COLUMN: Real-time Logs -->
+    <div class="card logs-column">
+      <h3 class="card-title">
+        <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" /></svg>
+        Live Gate Logs Feed
+      </h3>
+      <div class="feed-container" id="logs-feed">
+        <!-- Logs populated here -->
+        <div class="empty-state">Fetching gateway records...</div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Virtual Simulator Console -->
+    <div class="card">
+      <h3 class="card-title">
+        <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-2 10H7v-2h10v2z" /></svg>
+        Hardware Simulator Panel
+      </h3>
+      
+      <p style="font-size: 0.85rem; color: var(--text-sub); line-height: 1.4;">
+        No physical hardware scanner is required to test. Use these buttons to trigger simulated reader events to the Express server REST endpoints.
+      </p>
+
+      <div class="sim-buttons-container">
+        <button class="sim-button" onclick="triggerRfid('card_john')">
+          <span>💳</span>
+          <div>
+            <div>Swipe John's RFID badge</div>
+            <div style="font-size:0.75rem;color:var(--text-sub)">Card UID: card_john (Engineering)</div>
+          </div>
+        </button>
+
+        <button class="sim-button" onclick="triggerRfid('card_jane')">
+          <span>💳</span>
+          <div>
+            <div>Swipe Jane's RFID badge</div>
+            <div style="font-size:0.75rem;color:var(--text-sub)">Card UID: card_jane (Operations)</div>
+          </div>
+        </button>
+
+        <button class="sim-button" onclick="triggerBiometric(3)">
+          <span>👆</span>
+          <div>
+            <div>Scan Bob's fingerprint</div>
+            <div style="font-size:0.75rem;color:var(--text-sub)">Biometric print ID: 3 (Security)</div>
+          </div>
+        </button>
+
+        <button class="sim-button" onclick="triggerFaceTrigger()">
+          <span>📸</span>
+          <div>
+            <div>Trigger Bob's Face recognition</div>
+            <div style="font-size:0.75rem;color:var(--text-sub)">IP Camera snapshot trigger via email</div>
+          </div>
+        </button>
+
+        <button class="sim-button" onclick="triggerRfid('card_unknown')">
+          <span>⚠️</span>
+          <div>
+            <div>Swipe Unknown Visitor badge</div>
+            <div style="font-size:0.75rem;color:var(--text-sub)">Simulate unauthorized access denial</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="console-card" id="console-output">
+        <div class="console-line">SYSTEM initialized. Ready for device log input.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // System diagnostics logs helper
+    function logToConsole(msg) {
+      const consoleEl = document.getElementById('console-output');
+      const time = new Date().toLocaleTimeString();
+      consoleEl.innerHTML += `<div class="console-line">[${time}] ${msg}</div>`;
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    // HTTP POST triggers to API
+    async function triggerRfid(cardUid) {
+      logToConsole(`Sending RFID signal: Card=${cardUid}...`);
+      try {
+        const res = await fetch('/api/v1/iot/rfid-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardUid, deviceId: 'GATE_01_RFID', direction: 'in' })
+        });
+        const data = await res.json();
+        if (data?.status === 'success') {
+          logToConsole(`Result: ${data?.data?.status?.toUpperCase()} - Employee: ${data?.data?.employee ? data?.data?.employee?.name : 'Unknown'}`);
+          fetchLogs();
+        }
+      } catch (err) {
+        logToConsole(`Error: ${err?.message}`);
+      }
+    }
+
+    async function triggerBiometric(biometricId) {
+      logToConsole(`Sending fingerprint biometric signal: PrintID=${biometricId}...`);
+      try {
+        const res = await fetch('/api/v1/iot/biometric-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ biometricId, deviceId: 'GATE_02_BIO', direction: 'in' })
+        });
+        const data = await res.json();
+        if (data?.status === 'success') {
+          logToConsole(`Result: ${data?.data?.status?.toUpperCase()} - Employee: ${data?.data?.employee ? data?.data?.employee?.name : 'Unknown'}`);
+          fetchLogs();
+        }
+      } catch (err) {
+        logToConsole(`Error: ${err?.message}`);
+      }
+    }
+
+    async function triggerFaceTrigger() {
+      logToConsole(`Sending face recognition camera trigger: Email=bob@example.com...`);
+      try {
+        const res = await fetch('/api/v1/iot/camera-trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceId: 'GATE_03_CAM',
+            direction: 'in',
+            email: 'bob@example.com',
+            rtspSnapshot: 'http://cctv.local/snapshots/bob_face.jpg'
+          })
+        });
+        const data = await res.json();
+        if (data?.status === 'success') {
+          logToConsole(`Result: ${data?.data?.status?.toUpperCase()} - Employee: ${data?.data?.employee ? data?.data?.employee?.name : 'Unknown'}`);
+          fetchLogs();
+        }
+      } catch (err) {
+        logToConsole(`Error: ${err?.message}`);
+      }
+    }
+
+    // Fetch chronological logs and populate the list feed
+    async function fetchLogs() {
+      try {
+        const res = await fetch('/api/v1/iot/logs?limit=15');
+        const data = await res.json();
+        if (data?.status === 'success') {
+          renderLogs(data?.data);
+        }
+      } catch (err) {
+        console.error('Error fetching logs:', err);
+      }
+    }
+
+    function renderLogs(logs) {
+      const feed = document.getElementById('logs-feed');
+      if (!logs || logs.length === 0) {
+        feed.innerHTML = '<div class="empty-state">No gate access logs recorded yet.</div>';
+        return;
+      }
+
+      feed.innerHTML = logs.map(log => {
+        const isGranted = log?.status === 'granted';
+        const typeEmoji = log?.deviceType === 'rfid' ? '💳' : log?.deviceType === 'biometric' ? '👆' : '📸';
+        const empName = log?.employee ? log?.employee?.name : 'Unknown Visitor';
+        const empEmail = log?.employee ? log?.employee?.email : 'Authentication Failed';
+        const empCode = log?.employee ? `Code: ${log?.employee?.employeeCode || log?.employee?.employee_code}` : 'Card Unregistered';
+        const department = log?.employee ? `<div class="department-badge">${log?.employee?.department}</div>` : '';
+        const time = log?.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+
+        let cameraSection = '';
+        if (log?.deviceType === 'face_recognition' && log?.capturedImage) {
+          cameraSection = `
+            <div class="rtsp-thumb">
+              <div class="camera-feed-dot"></div>
+              <span>RTSP Feed Frame Snapshot Captured: <a href="#" style="color:#38bdf8" onclick="event.preventDefault(); alert('${log?.capturedImage}')">${log?.capturedImage?.split('/')?.pop()}</a></span>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="log-card ${log?.status || ''}">
+            <div class="device-icon">${typeEmoji}</div>
+            <div class="employee-info">
+              <h4>${empName}</h4>
+              <p>${empEmail}</p>
+              <p style="font-size:0.75rem; margin-top:2px">${empCode}</p>
+              ${department}
+            </div>
+            <div class="log-status-section">
+              <span class="badge ${log?.status || ''}">${log?.status || ''}</span>
+              <span class="log-time">${time}</span>
+              <span style="font-size:0.7rem; color:var(--text-sub)">${log?.deviceId || ''}</span>
+            </div>
+            ${cameraSection}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Periodically poll for updates
+    fetchLogs();
+    setInterval(fetchLogs, 2500);
+
+    // Fetch CPU info to display workers
+    document.getElementById('worker-count').innerText = `${navigator.hardwareConcurrency || 4} Workers`;
+  </script>
+</body>
+</html>

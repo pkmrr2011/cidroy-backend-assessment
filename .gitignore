@@ -1,0 +1,16 @@
+# Dependency directories
+node_modules/
+
+# Compiled files
+dist/
+
+# Local env file containing credentials
+.env
+
+# Logs and system directories
+*.log
+.system_generated/
+
+# OS files
+.DS_Store
+Thumbs.db

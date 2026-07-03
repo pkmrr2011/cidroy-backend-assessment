@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: cidroy_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: postgres
+      MYSQL_DATABASE: cidroy_db
+    ports:
+      - "3307:3306" # Mapped to 3307 on host to prevent port conflicts with local MySQL services
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: cidroy_redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cidroy_backend_app
+    restart: always
+    ports:
+      - "3000:3000"
+      - "9000:9000" # Expose TCP port for IP/RFID readers
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: 3306 # Still connects internally via Docker bridge to port 3306
+      DB_USER: root
+      DB_PASSWORD: postgres
+      DB_NAME: cidroy_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
