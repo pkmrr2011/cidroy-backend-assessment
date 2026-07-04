@@ -16,7 +16,9 @@ const generateAccessToken = (user: User): string => {
 };
 
 const generateRefreshToken = (user: User): string => {
-  return jwt.sign({ id: user.id }, env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: user.id, jti: crypto.randomUUID() }, env.JWT_REFRESH_SECRET, {
+    expiresIn: '7d',
+  });
 };
 
 export const register = asyncHandler(async (req, res, next) => {
@@ -163,8 +165,7 @@ export const logout = asyncHandler(async (req, res) => {
 
 export const getUsers = asyncHandler(async (req, res) => {
   const users = await User.findAll({
-    attributes: ['id', 'email', 'role', 'createdAt', 'updatedAt'],
-    raw: true,
+    attributes: { exclude: ['password'] },
   });
 
   res.status(200).json({

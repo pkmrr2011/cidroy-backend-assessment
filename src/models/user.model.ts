@@ -44,6 +44,7 @@ export function initUser(sequelize: Sequelize) {
     {
       sequelize,
       tableName: 'users',
+      underscored: true,
       hooks: {
         beforeCreate: async (user: User) => {
           if (user.password) {

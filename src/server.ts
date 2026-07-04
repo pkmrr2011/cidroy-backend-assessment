@@ -36,7 +36,7 @@ if (cluster.isPrimary) {
     // Run database sync ONLY in the master process, ensuring it runs exactly once!
     if (env.NODE_ENV !== 'production') {
       logger.info('Primary process syncing database models...');
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       logger.info('Database models synced successfully');
     }
 

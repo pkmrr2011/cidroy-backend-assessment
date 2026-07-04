@@ -8,7 +8,7 @@ async function seedAuth() {
   logger.info('Connected to MySQL.');
 
   logger.info('Syncing database models before seeding...');
-  await sequelize.sync({ alter: true });
+  await sequelize.sync();
   logger.info('Database models synced.');
 
   // 1. Seed Users

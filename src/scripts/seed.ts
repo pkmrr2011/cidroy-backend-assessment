@@ -9,7 +9,7 @@ async function seed() {
   logger.info('Connected to MySQL.');
 
   logger.info('Syncing database models before seeding...');
-  await sequelize.sync({ alter: true });
+  await sequelize.sync();
   logger.info('Database models synced.');
 
   // 1. Stage 1: Seed Employees safely using findOrCreate (Idempotence)

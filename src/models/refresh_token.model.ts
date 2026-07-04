@@ -54,6 +54,7 @@ export function initRefreshToken(sequelize: Sequelize) {
     {
       sequelize,
       tableName: 'refresh_tokens',
+      underscored: true,
     }
   );
 }

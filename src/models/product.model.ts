@@ -58,6 +58,7 @@ export function initProduct(sequelize: Sequelize) {
     {
       sequelize,
       tableName: 'products',
+      underscored: true,
       paranoid: true, // Enable soft deletes
       deletedAt: 'deleted_at',
     }
